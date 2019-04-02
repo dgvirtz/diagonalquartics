@@ -1,0 +1,166 @@
+//degree 4, interested in transcendental 2-torsion
+d := 4; l:= 2;
+
+load "globals.magma";
+load "utils.magma";
+load "computeCohomology.magma";
+load "computePic_lines.magma";
+load "print.magma";
+
+//assign names to the generators of generic Galois group
+sigma := G.1; s1 := G.2; s2 := G.3; s3 := G.4; tau := G.5;
+
+// S-D's basis for Pic
+sd := [[1,2,3,1,1],[1,2,3,1,3],[1,2,3,1,5],[1,2,3,1,7],[1,2,3,3,1],[1,2,3,3,3],[1,2,3,3,5],[1,2,3,5,1],[1,2,3,5,3],[1,2,3,5,5],
+        [2,3,1,1,1],[2,3,1,1,3],[2,3,1,1,5],[2,3,1,3,1],[2,3,1,3,3],[2,3,1,3,5],
+        [3,1,2,1,1],[3,1,2,1,3],[3,1,2,1,5],[3,1,2,3,1]
+      ];
+linespacesSD := [sub<K4|[bK4[1]-e^m*bK4[j],bK4[k]-e^n*bK4[l]]>
+            : es in sd|true where j is es[1]+1 where k is es[2]+1 where l is es[3]+1 where m is es[4] where n is es[5]];
+//base change from S-D to Magma's basis for Pic
+ChangeSD := Matrix(Z, [Eltseq(Lambda.Index(linespacesK4,l)):l in linespacesSD])*ClassMatrix;
+//embed into larger dual lattice, inverse BSD^-1 useful to pull back from Pic* as described by lines to S-D's basis 
+BSD := ChangeRing(ChangeSD*PicLInt,Q);
+//BSDT^-1 pulls back from Pic* as described by Looijenga to S-D's basis
+BSDT := BSD*ChangeRing(Transpose(identPic),Q)^-1;
+
+//the two generators w1, w2 of T and their representation BO in the basis of T chosen by Magma
+w := [8*(IdempotentHodge([1,1,1])+IdempotentHodge([3,3,3])),8*ed*(IdempotentHodge([1,1,1])-IdempotentHodge([3,3,3]))];
+BO := Matrix([Solution(BT,ChangeRing(Matrix([Eltseq(monsmap(x)) cat [0]]),Z)): x in w]);
+print "(w1,w2)=1/8*";
+ChangeRing(8*ChangeRing(BO*ChangeRing(ChangeRing(f3,Integers(8))^-1,Z)*PhiDiscPicSection,Q)*BSDT^-1,Integers(8));
+
+print "Lemma A.1";
+zs := [sub<G|sigma*s2*s3>, sub<G|sigma*s2*s3^2>, sub<G|sigma*s2^2*s3^3>];
+coeffs := [[1,2,2],[1,2,4],[1,4,8]];
+for HG in zs do
+    H := HG @ isoGPC;
+    "Case ", coeffs[Index(zs,HG)];
+    CPicDual := MyRestriction(CPicLDualGen,H);
+    CDisc := MyRestriction(CDiscLGen,H);
+    phi0 := InducedMapH0(CPicDual, CDisc, PhiMatrix);
+    "H0(G,NS*) ", CohomologyGroup(CPicDual,0);
+    "H0(G,Delta) ", CohomologyGroup(CDisc,0);
+    "H0(G,NS*)->H0(G,Delta) ", phi0;
+    //preimage of basis of Delta^G 
+    [ZeroCocycle(CPicDual, Solution(phi0,b))(<>)*BSD^-1: b in Basis(CohomologyGroup(CDisc,0))];
+end for;
+
+print "Lemma A.2";
+H := sub<G|sigma*s2*s3^3> @ isoGPC;
+CPicDual := MyRestriction(CPicLDualGen,H);
+CDisc := MyRestriction(CDiscLGen,H);
+phi0 := InducedMapH0(CPicDual, CDisc, PhiMatrix);
+"H0(G,NS*) ", CohomologyGroup(CPicDual,0);
+"H0(G,Delta) ", CohomologyGroup(CDisc,0);
+"H0(G,NS*)->H0(G,Delta) ", phi0;
+C, coker := CohomologyGroup(CDisc,0)/Image(phi0);
+"coker ", C;
+ZeroCocycle(CDisc, C.1 @@ coker)(<>)*PhiSection*BSD^-1;
+
+print "Lemma A.3";
+GH := sub<G|sigma*s2*s3^3,s1^2*s2^2> @ isoGPC;
+H := sub<G|s1^2*s2^2> @ isoGPC;
+CPic := MyRestriction(CPicLGen,GH);
+CPicDual := MyRestriction(CPicLDualGen,GH);
+CDisc := MyRestriction(CDiscLGen,GH);
+CPicDualres := MyRestriction(CPicLDualGen,H);
+CDiscres := MyRestriction(CDiscLGen,H);
+"H1(GxH,NS) ", CohomologyGroup(CPic,1);
+"H1(GxH,NS*) ", CohomologyGroup(CPicDual,1);
+"H1(H,NS*) ", CohomologyGroup(MyRestriction(CPicDual,H),1);
+"Basis of H0(GxH,NS*) ", CohomologyGroup(CPicDual,0);
+[ZeroCocycle(CPicDual, b)(<>)*BSD^-1: b in Basis(CohomologyGroup(CPicDual,0))];
+[ZeroCocycle(CPicDual, b)(<>)*PhiMatrix: b in Basis(CohomologyGroup(CPicDual,0))];
+
+s := [OneCocycle(CPicDual, b): b in Basis(CohomologyGroup(CPicDual,1))];
+"First cocycle";
+"Generator of G -> ", s[1](<GH.1>)*BSD^-1;
+"Generator of H -> ", s[1](<GH.2>)*BSD^-1;
+"Second cocycle";
+"Generator of G -> ", s[2](<GH.1>)*BSD^-1;
+"Generator of H -> ", s[2](<GH.2>)*BSD^-1;
+"Third cocycle";
+"Generator of G -> ", s[3](<GH.1>)*BSD^-1;
+"Generator of H -> ", s[3](<GH.2>)*BSD^-1;
+
+comp := RestrictionMapH1(CPicDual, H)*InducedMapH1(CPicDualres, CDiscres, PhiMatrix);
+"Composition map ", comp;
+
+print "Lemma A.4";
+descentQ := [sub<G|sigma*s2*s3^3,tau>, sub<G|sigma*s2*s3^3,s2*s3*tau>, sub<G|sigma*s1*s2^3,s2*s3*tau>,
+            sub<G|sigma*s1^3*s2^2*s3^3,s1*tau>, sub<G|sigma*s2*s3^3,s3*tau>, sub<G|sigma*s2^3*s3,s3*tau>];
+coeffs := [[1,2,8],[1,-2,-8],[2,-2,-4],[-2,4,8],[1,2,-2],[1,8,-8]];
+for HG in descentQ do
+        H := HG @isoGPC;
+        "Case ", coeffs[Index(descentQ,HG)];
+        CPicDual := MyRestriction(CPicDualGen,H);
+        CDiscT := MyRestriction(CDiscTGen,H);
+        CBrl := MyRestriction(CBrlGen,H);
+        CM := MyRestriction(CMGen,H);
+    
+        H1PicDual := CohomologyGroup(CPicDual, 1);
+        H1Disc := CohomologyGroup(CDiscT, 1);
+        H0Brl := CohomologyGroup(CBrl,0);
+        
+        "H0(G,Br[2])", H0Brl;
+        for b in Basis(H0Brl) do
+            "0-Cocycle";
+            s := ZeroCocycle(CBrl, b);
+            s(<>)*ChangeRing(BO,Zl)^-1;
+        end for;
+        "H1(G,NS*)", H1PicDual;
+        for b in Basis(H1PicDual) do
+            "1-Cocycle";
+            s := OneCocycle(CPicDual, b);
+            s(<H!(HG.1 @ isoGPC)>)*BSD^-1;
+            s(<H!(HG.2 @ isoGPC)>)*BSD^-1;
+        end for;
+        "H1(G,Delta)", H1Disc;
+        for b in Basis(H1Disc) do
+            "1-Cocycle";
+            s := OneCocycle(CDiscT, b);
+            s(<H!(HG.1 @ isoGPC)>)*BO^-1;
+            s(<H!(HG.2 @ isoGPC)>)*BO^-1;
+        end for;
+        
+        m1 := ConnectingMapH0H1(CDiscT,CM,CBrl,f,f5);
+        "H0(G,Br[2])->H1(G,Delta) ", m1;
+        m2 := InducedMapH1(CPicDual, CDiscT, f2*f3);
+        "H1(G,NS*)->H1(G,Delta) ", m2;
+         img := Image(hom<H1PicDual ->  H1Disc|m2>) meet Image(hom<FullRSpace(H0Brl) ->  H1Disc|m1>);
+         #img;
+end for;
+
+print "Theorem B";
+monsters := [sub<G|sigma*s2*s3^3>, sub<G|sigma*s2*s3^3,s3*tau>, sub<G|sigma*s2^3*s3,s3*tau>];
+coeffs := ["1,2,8/Q(i)", "1,2,-2/Q", "1,8,-8/Q"];
+for HG in monsters do
+    H := HG @isoGPC;
+    "Case ", coeffs[Index(monsters,HG)];
+    CPicDual := MyRestriction(CPicDualGen,H);
+    CM := MyRestriction(CMGen,H);
+    NullModule := GModule(H,[ZeroMatrix(Z,0,0): g in PCGenerators(H)]); 
+    CNull := CohomologyModule(H, NullModule);
+    null := ZeroMatrix(Z,Dimension(CM),0);
+    con := f2*f3*ChangeRing(f4,Z);
+    Hyper, v00, v10, h01 := HyperCohomologyGroup(CPicDual,CM,CNull,con,null,1);
+    "Hypercohomology: ", Moduli(Hyper);
+    "Z1(NS*)", CPicDual`Z1;
+    for b in Basis(CPicDual`Z1) do
+        print "Cocycle";
+        for g in Generators(HG) do
+            ZOneCocycle(CPicDual, b)(<H!(g @ isoGPC)>)*BSDT^-1;
+        end for;
+    end for;
+    print "Z1(M)", FullRSpace(ChangeRing(CM`Z1, Ring(CM)));
+    for b in Basis(FullRSpace(ChangeRing(CM`Z1, Ring(CM)))) do
+        print "Cocycle";
+        for g in Generators(HG) do
+            ZOneCocycle(CM, b)(<H!(g @ isoGPC)>)*BO^-1;
+        end for;
+    end for;
+    "h01", Solution(BasisMatrix(ChangeRing(CM`Z1, Ring(CM))),ChangeRing(h01,Ring(CM)));
+    "v00", Solution(BasisMatrix(CPicDual`Z1),ChangeRing(BSDT,Z)*v00);
+    "v10", Solution(BasisMatrix(ChangeRing(CM`Z1, Ring(CM))),ChangeRing(BO*v10,Ring(CM)));
+end for;

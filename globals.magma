@@ -1,0 +1,45 @@
+//d is the degree of the surface, l the order of transcendental Brauer to compute
+Z:=Integers(); Q:=Rationals();
+Zd := Integers(d); Z2d := Integers(2*d); Zl := Integers(l);
+K<e>:=CyclotomicField(2*d);
+O := Integers(K);
+Kd<ed> := CyclotomicField(d);
+Od := Integers(Kd);
+xd := 1-ed;
+kd, red := quo<Od|xd>;
+
+//(Z/2d)* and its generators
+U2d, res2d:=UnitGroup(Z2d);
+cycgens2d := [res2d(U2d.j): j in [1..Ngens(U2d)]];
+
+//(Z/d)*, its generators and induced automorphisms of Kd/Q
+Ud, resd:=UnitGroup(Zd);
+cycgensd := [resd(Ud.j): j in [1..Ngens(Ud)]];
+homsKd := [hom<Kd->Kd|ed^Z!t> : t in cycgensd];
+
+//a polynomial ring for expressing the Stickelberger elements
+_<st>:=PolynomialRing(Z);
+
+b2:=d^3-4*d^2+6*d-2; //second Betti number
+pg:=Binomial(d-1,3); 
+//signature (np,nm) of intersection product
+np:=1/3*(d^3-6*d^2 + 11*d- 3);
+nm:=1/3*(d-1)*(2*d^2-4*d+3);
+
+//predicted sizes for Pic, T and Disc (fails for (d,6)!=1)
+rho:=3*(d-1)*(d-2)+1+((d+1) mod 2);
+cork := b2-rho;
+disc:=d^(3*(d-3)^2);
+
+//the characters chi_a up to permutation
+as := &cat[RestrictedPartitions(j*d,4,{1..d-1}): j in [1..3]];
+//algebraic values
+ZA := [a : a in as|&and[&+[x*g mod d: x in a] eq 2*d:g in [1..d-1]|IsCoprime(g,d)]];
+ZAfull := Setseq({PermuteSequence(a, g): a in ZA, g in SymmetricGroup(4)});
+PA := [[ed^x: x in a]:a in ZAfull];
+//transcendental values
+ZT := [a: a in as|not a in ZA];
+ZTfull := Setseq({PermuteSequence(a, g): a in ZT, g in SymmetricGroup(4)});
+PT := [[ed^x: x in a]:a in ZTfull];
+//all values
+Zfull := ZTfull cat ZAfull;
