@@ -14,10 +14,10 @@ for j in [1..3*d^2] do Int[j,j] := 2-d; end for;
 //t1 t2, t3 are 4th roots of generic coefficients
 BB<t1,t2,t3>:=PolynomialRing(K,3);
 //Gal(K2d/Q) leaves t1,t2,t3 fixed but transforms the ground field
-Galactions:=[hom<BB->BB|hom<K->K|e^(Z!j)>,[t1,t2,t3]>: j in cycgens2d];
+Galactions:=[hom<BB->BB|hom<K->K|e^(Z!(j^-1))>,[t1,t2,t3]>: j in cycgens2d];
  
 //the lines as linear spaces with generic coefficients
-r:=[t1,t2,t3,1];
+r:=[1,t1,t2,t3];
 B4:=VectorSpace(FieldOfFractions(BB),4); b:=Basis(B4);
 linespaces:=[sub<B4|[r[i]*b[i]-e^m*r[j]*b[j],r[k]*b[k]-e^n*r[l]*b[l]]>
             :m,n in [2*r+1: r in [0..d-1]], i,j,k,l in [1..4]|i lt j and i lt k and k lt l and #{i,j,k,l} eq 4];
@@ -32,7 +32,7 @@ perms:=[LSpaceAction(a): a in Galactions];
 //actions for Gal(KC/K)
 actionsPic := [&*[perms[j]^Eltseq((Z2d!Norm(rec(g @@ redNGal))) @@ res2d)[j] : j in [1..#cycgens2d]]:g in Generators(Gal)];
 //actions for (Z/d)^3
-actionsPic cat:= [LSpaceAction(a): a in [hom<BB->BB|[ed*t1,t2,t3]>, hom<BB->BB|[t1,ed*t2,t3]>, hom<BB->BB|[t1,t2,ed*t3]>]];
+actionsPic cat:= [LSpaceAction(a): a in [hom<BB->BB|[1/ed*t1,t2,t3]>, hom<BB->BB|[t1,1/ed*t2,t3]>, hom<BB->BB|[t1,t2,1/ed*t3]>]];
 //actions of Gal(Kd/Q)
 actionsPic cat:= [&*[perms[j]^Eltseq((Z2d!-1) @@ res2d)[j] : j in [1..#cycgens2d]]:t in cycgensd];
 
@@ -67,18 +67,18 @@ CDiscLGen := CohomologyModule(GPC,Moduli(DiscL),[PhiSection*MatrixOfElement(CPic
 //then for three different permutations of the coordinates, use (mu_d)^3-action to construct images of other lines
 identPic := ZeroMatrix(Z,Dimension(Lambda),Dimension(PicL));
 for e1,e2,e3 in [0..d-1] do
-    ind := Index(linespacesK4, sub<K4|[bK4[1]*e^(2*e1)-e^(1+2*e2)*bK4[2],bK4[3]*e^(2*e3)-e*bK4[4]]>);
-    img := u1^-e1*u2^-e2*u3^-e3*&+[u1^a*u2^b: a,b in [0..d-2]|a le b]*&+[u3^a*1^b: a,b in [0..d-2]|a le b];
+    ind := Index(linespacesK4, sub<K4|[bK4[1]-e^(1+2*e1)*bK4[2],bK4[3]*e^(2*e2)-e^(1+2*e3)*bK4[4]]>);
+    img := - u1^e1*u2^e2*u3^e3*&+[u0^a*u1^b: a,b in [0..d-2]|a ge b]*&+[u2^a*u3^b: a,b in [0..d-2]|a ge b];
     identPic[ind] := Solution(BPic,ChangeRing(Vector(Q,Eltseq(monsmap(img)/d) cat [1/d])*BHfull^-1,Z));
 end for;
 for e1,e2,e3 in [0..d-1] do
-    ind := Index(linespacesK4, sub<K4|[bK4[1]*e^(2*e1)-e^(1+2*e3)*bK4[3],bK4[2]*e^(2*e2)-e*bK4[4]]>);
-    img := -u1^-e1*u2^-e2*u3^-e3*&+[u1^a*u3^b: a,b in [0..d-2]|a le b]*&+[u2^a*1^b: a,b in [0..d-2]|a le b];
+    ind := Index(linespacesK4, sub<K4|[bK4[1]-e^(1+2*e2)*bK4[3],bK4[2]*e^(2*e1)-e^(1+2*e3)*bK4[4]]>);
+    img := u1^e1*u2^e2*u3^e3*&+[u0^a*u2^b: a,b in [0..d-2]|a ge b]*&+[u1^a*u3^b: a,b in [0..d-2]|a ge b];
     identPic[ind] := Solution(BPic,ChangeRing(Vector(Q,Eltseq(monsmap(img)/d) cat [1/d])*BHfull^-1,Z));
 end for;
 for e1,e2,e3 in [0..d-1] do
-    ind := Index(linespacesK4, sub<K4|[bK4[3]*e^(2*e3)-e^(1+2*e2)*bK4[2],bK4[1]*e^(2*e1)-e*bK4[4]]>);
-    img := -u1^-e1*u2^-e2*u3^-e3*&+[u3^a*u2^b: a,b in [0..d-2]|a le b]*&+[u1^a*1^b: a,b in [0..d-2]|a le b];
+    ind := Index(linespacesK4, sub<K4|[bK4[1]-e^(1+2*e3)*bK4[4],bK4[3]*e^(2*e2)-e^(1+2*e1)*bK4[2]]>);
+    img := u1^e1*u2^e2*u3^e3*&+[u0^a*u3^b: a,b in [0..d-2]|a ge b]*&+[u2^a*u1^b: a,b in [0..d-2]|a ge b];
     identPic[ind] := Solution(BPic,ChangeRing(Vector(Q,Eltseq(monsmap(img)/d) cat [1/d])*BHfull^-1,Z));
 end for;
 identPic := ClassSection*identPic;

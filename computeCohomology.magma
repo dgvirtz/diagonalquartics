@@ -25,7 +25,7 @@ incHprim := HorizontalJoin(IdentityMatrix(Q,b2-1),ZeroMatrix(Q,b2-1,1));
 Vmons, monsmap := VectorSpace(Hprim);
 
 //missing element for full cohomology
-c := &+[u1^a*u2^b: a,b in [0..d-2]|a le b]*&+[u3^a*1^b: a,b in [0..d-2]|a le b];
+c := - &+[u0^a*u1^b: a,b in [0..d-2]|a ge b]*&+[u2^a*u3^b: a,b in [0..d-2]|a ge b];
 //the basis of full cohomology Hfull expressed in AmbHInt
 BHfull := VerticalJoin(incHprim, Matrix(Q,[Eltseq(monsmap(c)/d) cat [1/d]]));
 //intersection matrix of full cohomology
@@ -34,15 +34,14 @@ HInt := ChangeRing(BHfull*AmbHInt*Transpose(BHfull),Z);
 //transcendental cycles should evaluate 0 on points in PA
 monsvalT := Matrix([&cat[Eltseq(Evaluate(phi,PK)): PK in PA]:phi in mons]);
 //basis of transcendental lattice T in Hfull
-BT := Saturation(ChangeRing(BasisMatrix(Kernel(monsvalT))
-    *ChangeRing(DiagonalMatrix([Lcm([Denominator(x): x in Eltseq(row)]): row in Rows(monsvalT)]),Q),Z))*ChangeRing(incHprim,Z);
+BT := Saturation(BasisMatrix(Kernel(ChangeRing(monsvalT,Z))))*ChangeRing(incHprim,Z);
 TInt := BT*HInt*Transpose(BT);
 
 //the rk of T
 cork := Nrows(TInt);
 LambdaT := RSpace(Z,cork);
 
-inclT := hom<LambdaT->LambdaT|TInt>; //CARE!
+inclT := hom<LambdaT->LambdaT|TInt>;
 //discriminant quotient
 DiscT, phiT := quo<LambdaT|Image(inclT)>;
 //matrix representing T->Disc
@@ -89,8 +88,7 @@ PhiBrlSection := Solution(PhiBrlMatrix, IdentityMatrix(Zdmax, Dimension(Brl)));
 //algebraic cycles should vanish on PT
 monsvalPic := Matrix([&cat[Eltseq(Evaluate(phi,PK)): PK in PT]:phi in mons]);
 //basis matrix of Pic in Hfull
-BPic := DiagonalJoin(Saturation(ChangeRing(BasisMatrix(Kernel(monsvalPic))
-    *ChangeRing(DiagonalMatrix([Lcm([Denominator(x): x in Eltseq(row)]): row in Rows(monsvalPic)]),Q),Z))
+BPic := DiagonalJoin(Saturation(BasisMatrix(Kernel(ChangeRing(monsvalPic,Z))))
     ,ScalarMatrix(Z,1,1));
 //intersection matrix on Pic
 PicInt := ChangeRing(BPic*HInt*Transpose(BPic),Z);
@@ -194,8 +192,9 @@ actions := [ChangeRing(FrobeniusActionI(rec(N.j)),Q)/Norm(rec(N.j)): j in [1..Ng
 actions cat:= [ChangeRing(ChangeRing(BHfull,Kd)*BEig^-1*DiagonalMatrix([ed^(-a[j]) : a in Zfull] cat [1])
             *BEig*ChangeRing(BHfull^-1,Kd),Q) : j in [1..3]];
 //actions of Gal(Kd/Q)
-actions cat:= [BHfull*DiagonalJoin(Matrix([ChangeRing(monsmap((u1*u2*u3)^(Z!t-1)*b^(Z!t)),Q): b in mons]), Matrix([[Q|1]]))*BHfull^-1
-: t in cycgensd];
+t:=-1;
+u := 1/(1-u1)/(1-u2)/(1-u3)*(1-u1^Z!t)*(1-u2^Z!t)*(1-u3^Z!t)*(u1*u2*u3)^(Z!(t-1) div 2)/-1;
+actions cat:= [BHfull*DiagonalJoin(Matrix([ChangeRing(monsmap(b^(Z!t)),Q): b in mons]), Matrix([[Q|1]]))*BHfull^-1: t in cycgensd];
             
 //construct the group GM=N x (Z/d)^3 semidirect product Gal(Kd/Q)
 FQ := FreeGroup(Ngens(N)+ 3 + #cycgensd);
